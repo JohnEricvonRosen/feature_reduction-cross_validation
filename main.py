@@ -1,5 +1,6 @@
 import numpy as np
 import itertools
+import random as rand
 from matplotlib import pyplot as plt
 
 # create graph to determine necessary eigenvectors
@@ -19,61 +20,66 @@ def make_graph(S):
 
 # this is read and parse
 def readfile(filename, index, training=True):
-    values = list()
+    values = []
     if training:
         lower = index*200
         upper = index*200+100
     else:
-        lower = index*200+100
-        upper= index*200+200
+        lower = index*200
+        upper= index*200+100
     with open(filename, "r") as f:
         for line in itertools.islice(f, lower,upper):
                 values.append(line.split())
-    return np.asarray(values, dtype=np.float64)
+    rand.shuffle(values)
+    return values
 
-def cross_validate(U, test_data, L):
-    for j in range(10):
-        V = test_data[j*100:j*100+100]
-        T = np.concatenate((test_data[0:j*100], test_data[j*100+100:]), axis=0)
-        for m in range(10, 51): #m = 10, ... ,50
-            pass
+def cross_validate(U, training_data, m):
+    for j in range(5):
+        V = np.zeros((200,240), dtype=np.float64)
+        T = np.zeros((800,240), dtype=np.float64)
+        for i in range(0, 10):
+            temp = training_data[i*100+j*20:i*100+j*20+20]
+            V[i*20:i*20 + 20] = temp
+            temp1 = training_data[i*100:i*100+j*20]
+            temp2 = training_data[i*100+j*20+20:i*100+100]
+            temp = np.concatenate((temp1, temp2), axis=0)
+            T[i*80:i*80 + 80] = temp
+    return V, T
 
 def main():
-    mk = []
-    fk = []
     #For all digits in the training set do:
+    trai_data = []
+    test_data = []
     for i in range(0, 10):
-        #Parsing data into training set and test set 
-        training_data = np.empty((0,240), dtype=np.float64)
-        test_data = np.empty((0,240), dtype=np.float64)
+        #Parsing data into training set and test set. Random order within each class.
+        temp1 = readfile("mfeat-pix.txt", i, True)
+        temp2 = readfile("mfeat-pix.txt", i, False)
+        trai_data += temp1
+        test_data += temp2
 
-        training_data = np.vstack((training_data, readfile("mfeat-pix.txt", i, True)))
-        test_data = np.vstack((test_data, readfile("mfeat-pix.txt", i, False)))
-    
-        #mean of training set is computed
-        sum_vector = np.sum(training_data, axis=0)
-        mu = np.divide(sum_vector, 100)
+    training_data = np.asarray(trai_data, dtype=np.float64)
 
-        #training set centered        
-        X = training_data - mu
+    #mean of training set is computed
+    sum_vector = np.sum(training_data, axis=0)
+    mu = np.divide(sum_vector, 1000)
 
-        #C is computed 1/N XX' and then SVD of C
-        C = 1/100 * (X.T @ X)
-        U, S, V = np.linalg.svd(C)
+    #training set centered and then correct transpose      
+    X = np.subtract(training_data, mu).T
+
+    #C is computed 1/N XX' and then SVD of C
+    C = 1/1000 * (X @ X.T)
+    U, S, V = np.linalg.svd(C)
         
-        var = np.square(S)
-
-        dissimilarity = np.array([np.sum(var[m:]) / np.sum(var) for m in range(241)])
-
-        for m, dis in enumerate(dissimilarity):
-            if dis < 0.02:
-                mk.append(m)
-                fk.append(U[:m])
-                break
+    # Hand made m. Finding range of m by looking for dissimilarities for each feature 
+    # and taking the first m features where the dissimilarity > 2%. 
+    var = np.square(S)
+    dissimilarity = np.array([np.sum(var[m:]) / np.sum(var) for m in range(241)])
+    for m, dis in enumerate(dissimilarity):
+        if dis < 0.02:
+            break
         
-    print(str(mk))
-    make_graph(S)
-        # cross_validate(U, test_data, 5)
+    # make_graph(S)
+    cross_validate(U, training_data, m)
 
     
 
