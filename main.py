@@ -256,10 +256,11 @@ def main():
     print("Model Dm%dj%d" % (krange[mopt], alphaopt))
     
 
-    #MSEtrain, MSEtest, MISStrain, MISStest are 1d arrays. the first 10 values are for a certain k
-    #and then for each k there are 'x' different values for alpha. So it's like
-    # 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, .....
-    #so you need to make a graph for each k. 
+    #MSEtrain, MSEtest, MISStrain, MISStest are 1d arrays. the first 10 values are for a certain alpha
+    #and then for each alpha there are k different values. So it's like
+    # 1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4 ,5 ,...
+    #You'll need to make a new graph for each alpha I think. So you'll group all the
+    #1s together and all the 2s...
     
 
 if __name__ == "__main__":
